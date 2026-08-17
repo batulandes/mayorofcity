@@ -2,174 +2,73 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>İzometrik Belediye Başkanı Prototipi</title>
+    <title>Belediye Başkanı Simülasyonu</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #ui-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            position: absolute; top: 20px; left: 20px; color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;
         }
-        .top-bar {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px;
-            margin: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 20px;
-            pointer-events: auto;
-            align-items: center;
+        .stat { font-size: 24px; margin-bottom: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; }
+        #message-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85); color: white; padding: 30px;
+            border-radius: 15px; text-align: center; display: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 2px solid #fff;
         }
-        .stat-box {
-            text-align: center;
+        #progress-bar {
+            width: 100%; height: 20px; background: #333; margin-top: 15px;
+            border-radius: 10px; overflow: hidden; position: relative;
         }
-        .stat-label { font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase; }
-        .stat-value { font-size: 20px; font-weight: bold; color: #333; }
-        .money { color: #27ae60; }
-        .happiness { color: #f39c12; }
-        
-        #interaction-prompt {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 30px;
-            font-size: 18px;
-            display: none;
-            text-align: center;
-            border: 2px solid #fff;
+        #filler {
+            height: 100%; width: 0%; background: linear-gradient(90deg, #ff4b4b, #ffff4b, #4bff4b);
+            transition: width 0.1s linear;
         }
-
-        #minigame-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            pointer-events: auto;
-            z-index: 100;
-        }
-        .minigame-box {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            width: 400px;
-        }
-        .progress-container {
-            width: 100%;
-            height: 30px;
-            background: #eee;
-            border-radius: 15px;
-            margin: 20px 0;
-            overflow: hidden;
-            position: relative;
-        }
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #3498db, #2ecc71);
-            transition: width 0.1s;
-        }
-        .target-zone {
-            position: absolute;
-            top: 0; bottom: 0;
-            background: rgba(255, 0, 0, 0.3);
-            border-left: 2px solid red;
-            border-right: 2px solid red;
-        }
-        button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        button:active { transform: scale(0.95); }
-        
-        #notification {
-            position: absolute;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #2c3e50;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            opacity: 0;
-            transition: opacity 0.5s;
-        }
+        h1 { margin: 0 0 10px 0; color: #4facfe; }
+        .controls { font-size: 14px; color: #ccc; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<!-- UI Katmanı -->
 <div id="ui-layer">
-    <div class="top-bar">
-        <div class="stat-box">
-            <div class="stat-label">Bütçe</div>
-            <div class="stat-value money" id="money-display">₺50,000</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-label">Memnuniyet</div>
-            <div class="stat-value happiness" id="happy-display">%75</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-label">Nüfus</div>
-            <div class="stat-value" id="pop-display">1,240</div>
-        </div>
-        <div style="flex-grow:1; text-align:right; font-size:12px; color:#888;">
-            WASD / Ok Tuşları: Hareket<br>E: Etkileşim
-        </div>
+    <div class="stat">💰 Bütçe: <span id="budget">5000</span> ₺</div>
+    <div class="stat">😊 Memnuniyet: <span id="happiness">%70</span></div>
+    <div class="stat">👥 Nüfus: <span id="population">1200</span></div>
+    <div class="controls">
+        Hareket: W, A, S, D<br>
+        Etkileşim: E<br>
+        Mini Oyun: SPACE (Zamanında Bas)
     </div>
-    <div id="notification"></div>
 </div>
 
-<!-- Etkileşim İpucu -->
-<div id="interaction-prompt">
-    [E] Basarak Onar<br>
-    <span style="font-size:12px; opacity:0.7">Yol Çukuru Tespit Edildi</span>
-</div>
-
-<!-- Mini Oyun Ekranı -->
-<div id="minigame-overlay">
-    <div class="minigame-box">
-        <h2 id="mg-title">Yol Onarımı</h2>
-        <p>Bar yeşil alandayken SPACE'e bas!</p>
-        <div class="progress-container">
-            <div class="target-zone" id="target-zone" style="left: 60%; width: 20%;"></div>
-            <div class="progress-bar" id="mg-bar"></div>
-        </div>
-        <button id="mg-action-btn">BAŞLA (SPACE)</button>
+<div id="message-box">
+    <h1 id="msg-title">YOL ONARIMI</h1>
+    <p id="msg-text">Bozuk yol tespit edildi! Onarmak ister misiniz?</p>
+    <div id="game-area" style="display:none;">
+        <p>Çubuğu YEŞİL alanda durdur!</p>
+        <div id="progress-bar"><div id="filler"></div></div>
+        <p style="font-size:12px; margin-top:5px;">SPACE tuşuna bas!</p>
     </div>
+    <button id="action-btn" style="margin-top:15px; padding:10px 20px; font-size:16px; cursor:pointer;">Evet (₺500)</button>
 </div>
 
 <!-- Three.js Kütüphanesi -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
-    // --- OYUN DURUMU ---
-    const gameState = {
-        money: 50000,
-        happiness: 75,
-        population: 1240,
-        isMinigameActive: false
-    };
+    // --- OYUN DEĞİŞKENLERİ ---
+    let budget = 5000;
+    let happiness = 70;
+    let population = 1200;
+    let isMiniGameActive = false;
+    let miniGameRunning = false;
+    let fillDirection = 1;
+    let fillWidth = 0;
+    let animationId;
 
     // --- THREE.JS KURULUMU ---
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB); // Gökyüzü mavisi
-    scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
 
     // İzometrik Kamera
     const aspect = window.innerWidth / window.innerHeight;
@@ -189,244 +88,199 @@
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
-    dirLight.position.set(50, 100, 50);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 10);
     dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
     scene.add(dirLight);
 
-    // --- DÜNYA OLUŞTURMA ---
-    const groundGeometry = new THREE.PlaneGeometry(100, 100);
-    const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x567d46 }); // Çimen yeşili
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    // --- OYUN DÜNYASI ---
+    const groundGeo = new THREE.PlaneGeometry(50, 50);
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0x4caf50 }); // Çimen yeşili
+    const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Şehir Izgarası (Basit Binalar)
-    const buildings = [];
-    const buildingGeo = new THREE.BoxGeometry(4, 6, 4);
-    const buildingMat = new THREE.MeshStandardMaterial({ color: 0xecf0f1 });
+    // Rastgele Binalar
+    const buildingGeo = new THREE.BoxGeometry(2, 4, 2);
+    const buildingMat = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
     
-    for(let x = -40; x <= 40; x+=10) {
-        for(let z = -40; z <= 40; z+=10) {
-            if(Math.random() > 0.3 && !(x===0 && z===0)) { // Rastgele binalar, merkez boş
-                const mesh = new THREE.Mesh(buildingGeo, buildingMat);
-                mesh.position.set(x, 3, z);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                
-                // Çatı rengi
-                const roofGeo = new THREE.ConeGeometry(3.5, 2, 4);
-                const roofMat = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
-                const roof = new THREE.Mesh(roofGeo, roofMat);
-                roof.position.y = 4;
-                mesh.add(roof);
-                
-                scene.add(mesh);
-                buildings.push(mesh);
-            }
-        }
+    for(let i=0; i<15; i++) {
+        const mesh = new THREE.Mesh(buildingGeo, buildingMat);
+        mesh.position.x = (Math.random() - 0.5) * 40;
+        mesh.position.z = (Math.random() - 0.5) * 40;
+        mesh.position.y = 2;
+        // Belediye binası alanını boş bırak
+        if(Math.abs(mesh.position.x) < 5 && Math.abs(mesh.position.z) < 5) continue;
+        
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
     }
 
-    // Belediye Binası (Merkez)
-    const cityHallGeo = new THREE.BoxGeometry(10, 8, 10);
-    const cityHallMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f });
+    // Belediye Binası
+    const cityHallGeo = new THREE.BoxGeometry(6, 6, 6);
+    const cityHallMat = new THREE.MeshLambertMaterial({ color: 0xffd700 }); // Altın rengi
     const cityHall = new THREE.Mesh(cityHallGeo, cityHallMat);
-    cityHall.position.set(0, 4, 0);
+    cityHall.position.y = 3;
     cityHall.castShadow = true;
     scene.add(cityHall);
 
-    // Sorunlu Yol (Etkileşim Noktası)
-    const problemSpotGeo = new THREE.CircleGeometry(2, 16);
-    const problemSpotMat = new THREE.MeshBasicMaterial({ color: 0xe74c3c, transparent: true, opacity: 0.8 });
-    const problemSpot = new THREE.Mesh(problemSpotGeo, problemSpotMat);
-    problemSpot.rotation.x = -Math.PI / 2;
-    problemSpot.position.set(15, 0.1, 15);
-    scene.add(problemSpot);
-
-    // Animasyon için problem spotu efekti
-    let pulseScale = 1;
-    let pulseDir = 0.05;
-
-    // --- OYUNCU KARAKTERİ ---
-    const playerGeo = new THREE.CapsuleGeometry(0.8, 2, 4, 8);
-    const playerMat = new THREE.MeshStandardMaterial({ color: 0x3498db }); // Başkan Mavisi
+    // Oyuncu (Belediye Başkanı)
+    const playerGeo = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
+    const playerMat = new THREE.MeshLambertMaterial({ color: 0x0000ff }); // Mavi takım elbise
     const player = new THREE.Mesh(playerGeo, playerMat);
-    player.position.set(2, 1.8, 2);
+    player.position.y = 1;
     player.castShadow = true;
     scene.add(player);
 
-    // Kravat (Detay)
-    const tieGeo = new THREE.BoxGeometry(0.4, 0.8, 0.1);
-    const tieMat = new THREE.MeshStandardMaterial({ color: 0xc0392b });
-    const tie = new THREE.Mesh(tieGeo, tieMat);
-    tie.position.set(0, 0.5, 0.35);
-    player.add(tie);
-
-    // Hareket Değişkenleri
-    const keys = { w: false, a: false, s: false, d: false };
-    const speed = 0.3;
-    let targetRotation = 0;
+    // Sorunlu Yol Noktası
+    const problemGeo = new THREE.CircleGeometry(1.5, 32);
+    const problemMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.7 });
+    const problemSpot = new THREE.Mesh(problemGeo, problemMat);
+    problemSpot.rotation.x = -Math.PI / 2;
+    problemSpot.position.set(8, 0.05, 8);
+    scene.add(problemSpot);
 
     // --- KONTROLLER ---
-    window.addEventListener('keydown', (e) => {
+    const keys = { w: false, a: false, s: false, d: false };
+    const speed = 0.2;
+
+    document.addEventListener('keydown', (e) => {
         const key = e.key.toLowerCase();
-        if(keys.hasOwnProperty(key) || key === 'arrowup' || key === 'arrowleft' || key === 'arrowdown' || key === 'arrowright') {
-            if(key === 'w' || key === 'arrowup') keys.w = true;
-            if(key === 'a' || key === 'arrowleft') keys.a = true;
-            if(key === 's' || key === 'arrowdown') keys.s = true;
-            if(key === 'd' || key === 'arrowright') keys.d = true;
+        if(keys.hasOwnProperty(key)) keys[key] = true;
+        
+        if (key === 'e' && !isMiniGameActive && !miniGameRunning) {
+            checkInteraction();
         }
-        if(key === 'e') checkInteraction();
-        if(key === ' ' && gameState.isMinigameActive) runMinigameAction();
+        
+        if (key === ' ' && miniGameRunning) {
+            completeMiniGame();
+        }
     });
 
-    window.addEventListener('keyup', (e) => {
+    document.addEventListener('keyup', (e) => {
         const key = e.key.toLowerCase();
-        if(key === 'w' || key === 'arrowup') keys.w = false;
-        if(key === 'a' || key === 'arrowleft') keys.a = false;
-        if(key === 's' || key === 'arrowdown') keys.s = false;
-        if(key === 'd' || key === 'arrowright') keys.d = false;
+        if(keys.hasOwnProperty(key)) keys[key] = false;
     });
-
-    // --- ETKİLEŞİM SİSTEMİ ---
-    const promptEl = document.getElementById('interaction-prompt');
-    let canInteract = false;
 
     function checkInteraction() {
-        if(canInteract && !gameState.isMinigameActive) {
-            startMinigame();
+        const dist = player.position.distanceTo(problemSpot.position);
+        if(dist < 2.5) {
+            startMiniGameUI();
         }
     }
 
-    function showNotification(text) {
-        const notif = document.getElementById('notification');
-        notif.innerText = text;
-        notif.style.opacity = 1;
-        setTimeout(() => { notif.style.opacity = 0; }, 3000);
+    // --- MİNİ OYUN MANTIĞI ---
+    const msgBox = document.getElementById('message-box');
+    const gameArea = document.getElementById('game-area');
+    const actionBtn = document.getElementById('action-btn');
+    const filler = document.getElementById('filler');
+    const msgTitle = document.getElementById('msg-title');
+    const msgText = document.getElementById('msg-text');
+
+    function startMiniGameUI() {
+        isMiniGameActive = true;
+        msgBox.style.display = 'block';
+        gameArea.style.display = 'none';
+        actionBtn.style.display = 'inline-block';
+        msgTitle.innerText = "BOZUK YOL TESPİT EDİLDİ";
+        msgText.innerText = "Bu yolu onarmak maliyetli ama memnuniyeti artırır.";
+        actionBtn.innerText = "Onar (₺500)";
+        actionBtn.onclick = startMiniGameLogic;
     }
 
-    // --- MİNİ OYUN SİSTEMİ ---
-    const mgOverlay = document.getElementById('minigame-overlay');
-    const mgBar = document.getElementById('mg-bar');
-    const mgBtn = document.getElementById('mg-action-btn');
-    let mgValue = 0;
-    let mgDirection = 1;
-    let mgSpeed = 2;
-    let mgRunning = false;
-
-    function startMinigame() {
-        gameState.isMinigameActive = true;
-        mgOverlay.style.display = 'flex';
-        mgValue = 0;
-        mgSpeed = 2 + Math.random(); // Rastgele hız
-        mgRunning = true;
-        mgBtn.innerText = "DEVAM EDİYOR...";
-        mgBtn.disabled = true;
-    }
-
-    function runMinigameAction() {
-        if(!mgRunning) return;
-        
-        // Hedef bölge %60 ile %80 arası
-        if(mgValue >= 60 && mgValue <= 80) {
-            // Başarılı
-            completeMinigame(true);
-        } else {
-            // Başarısız
-            completeMinigame(false);
+    function startMiniGameLogic() {
+        if(budget < 500) {
+            alert("Yetersiz bakiye!");
+            closeUI();
+            return;
         }
+        gameArea.style.display = 'block';
+        actionBtn.style.display = 'none';
+        miniGameRunning = true;
+        fillWidth = 0;
+        fillDirection = 1;
+        runProgressBar();
     }
 
-    function completeMinigame(success) {
-        mgRunning = false;
-        gameState.isMinigameActive = false;
-        mgOverlay.style.display = 'none';
+    function runProgressBar() {
+        if(!miniGameRunning) return;
+        fillWidth += 2 * fillDirection;
+        if(fillWidth >= 100 || fillWidth <= 0) fillDirection *= -1;
         
+        filler.style.width = fillWidth + '%';
+        
+        // Renk değişimi (Kırmızı -> Sarı -> Yeşil)
+        if(fillWidth < 33) filler.style.background = '#ff4b4b';
+        else if(fillWidth < 66) filler.style.background = '#ffff4b';
+        else filler.style.background = '#4bff4b';
+
+        animationId = requestAnimationFrame(runProgressBar);
+    }
+
+    function completeMiniGame() {
+        miniGameRunning = false;
+        cancelAnimationFrame(animationId);
+        
+        let success = false;
+        if(fillWidth > 60 && fillWidth < 90) success = true; // Yeşil/Sarı bölge
+
+        closeUI();
+
         if(success) {
-            gameState.money -= 500;
-            gameState.happiness = Math.min(100, gameState.happiness + 5);
-            problemSpot.material.color.setHex(0x2ecc71); // Yeşil oldu
-            problemSpot.visible = false;
-            showNotification("✅ Yol Onarıldı! Halk Mutlu.");
+            budget -= 500;
+            happiness = Math.min(100, happiness + 15);
+            population += 50;
+            alert("BAŞARILI! Yol onarıldı. (+Memnuniyet)");
+            problemSpot.visible = false; // Sorunu kaldır
+            // Yeni bir sorun yarat (rastgele)
+            setTimeout(() => {
+                problemSpot.position.set((Math.random()-0.5)*30, 0.05, (Math.random()-0.5)*30);
+                problemSpot.visible = true;
+            }, 3000);
         } else {
-            gameState.money -= 200;
-            gameState.happiness = Math.max(0, gameState.happiness - 2);
-            showNotification("❌ Onarım Yarım Kaldı. Tekrar Deneyin.");
-            // Reset position for retry
-            problemSpot.visible = true;
-            problemSpot.material.color.setHex(0xe74c3c);
+            budget -= 200;
+            happiness = Math.max(0, happiness - 10);
+            alert("BAŞARISIZ! Malzeme israf oldu. (-Memnuniyet)");
         }
         updateUI();
     }
 
-    // Mini-game döngüsü
-    function updateMinigame() {
-        if(!mgRunning) return;
-        
-        mgValue += mgSpeed * mgDirection;
-        if(mgValue >= 100 || mgValue <= 0) mgDirection *= -1;
-        
-        mgBar.style.width = mgValue + '%';
-        
-        // Renk değişimi (Yeşil hedef alanı görsel ipucu olabilir ama zorluk için bırakalım)
+    function closeUI() {
+        msgBox.style.display = 'none';
+        isMiniGameActive = false;
     }
 
-    // --- UI GÜNCELLEME ---
     function updateUI() {
-        document.getElementById('money-display').innerText = '₺' + gameState.money.toLocaleString();
-        document.getElementById('happy-display').innerText = '%' + gameState.happiness;
-        document.getElementById('pop-display').innerText = gameState.population.toLocaleString();
+        document.getElementById('budget').innerText = budget;
+        document.getElementById('happiness').innerText = '%' + happiness;
+        document.getElementById('population').innerText = population;
     }
 
-    // --- ANA DÖNGÜ ---
+    // --- OYUN DÖNGÜSÜ ---
     function animate() {
         requestAnimationFrame(animate);
 
-        if(!gameState.isMinigameActive) {
-            // Hareket Mantığı
-            let moving = false;
-            if(keys.w) { player.position.z -= speed; player.rotation.y = Math.PI; moving = true; }
-            if(keys.s) { player.position.z += speed; player.rotation.y = 0; moving = true; }
-            if(keys.a) { player.position.x -= speed; player.rotation.y = -Math.PI/2; moving = true; }
-            if(keys.d) { player.position.x += speed; player.rotation.y = Math.PI/2; moving = true; }
+        if(!isMiniGameActive) {
+            // Hareket
+            if(keys.w) player.position.z -= speed;
+            if(keys.s) player.position.z += speed;
+            if(keys.a) player.position.x -= speed;
+            if(keys.d) player.position.x += speed;
 
-            // Kamera Takibi (Yumuşak)
-            const targetCamPos = new THREE.Vector3(
-                player.position.x + 20,
-                player.position.y + 20,
-                player.position.z + 20
-            );
-            camera.position.lerp(targetCamPos, 0.1);
+            // Kamera takibi
+            camera.position.x = player.position.x + 20;
+            camera.position.z = player.position.z + 20;
             camera.lookAt(player.position);
-
-            // Etkileşim Kontrolü (Mesafe)
-            const dist = player.position.distanceTo(problemSpot.position);
-            if(dist < 4) {
-                canInteract = true;
-                promptEl.style.display = 'block';
-                promptEl.style.top = (player.position.y + 5) + 'px'; // Basit konumlandırma
-            } else {
-                canInteract = false;
-                promptEl.style.display = 'none';
-            }
-
-            // Problem Spot Animasyonu
-            if(problemSpot.visible) {
-                pulseScale += pulseDir;
-                if(pulseScale > 1.5 || pulseScale < 1) pulseDir *= -1;
-                problemSpot.scale.set(pulseScale, 1, pulseScale);
-            }
-            
-            updateMinigame();
         }
 
         renderer.render(scene, camera);
     }
 
-    // Pencere Boyutlandırma
+    animate();
+
+    // Pencere boyutu değişirse
     window.addEventListener('resize', () => {
         const aspect = window.innerWidth / window.innerHeight;
         camera.left = -d * aspect;
@@ -436,10 +290,6 @@
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
-    animate();
-    updateUI();
-
 </script>
 </body>
 </html>
