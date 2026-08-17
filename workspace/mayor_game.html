@@ -2,30 +2,46 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Belediye Başkanı Simülasyonu</title>
+    <title>Belediye Başkanı Simülasyonu (Düzeltilmiş)</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background-color: #333; }
         #ui-layer {
             position: absolute; top: 20px; left: 20px; color: white;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;
+            user-select: none;
         }
-        .stat { font-size: 24px; margin-bottom: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; }
+        .stat { font-size: 24px; margin-bottom: 10px; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); }
         #message-box {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.85); color: white; padding: 30px;
+            background: rgba(20, 20, 20, 0.95); color: white; padding: 40px;
             border-radius: 15px; text-align: center; display: none;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 2px solid #fff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7); border: 2px solid #4facfe;
+            z-index: 100;
+            min-width: 300px;
         }
         #progress-bar {
-            width: 100%; height: 20px; background: #333; margin-top: 15px;
-            border-radius: 10px; overflow: hidden; position: relative;
+            width: 100%; height: 25px; background: #222; margin-top: 20px;
+            border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #555;
         }
         #filler {
             height: 100%; width: 0%; background: linear-gradient(90deg, #ff4b4b, #ffff4b, #4bff4b);
-            transition: width 0.1s linear;
+            transition: width 0.05s linear;
         }
-        h1 { margin: 0 0 10px 0; color: #4facfe; }
-        .controls { font-size: 14px; color: #ccc; margin-top: 20px; }
+        h1 { margin: 0 0 15px 0; color: #4facfe; font-size: 28px; }
+        p { font-size: 16px; line-height: 1.5; }
+        .controls { 
+            position: absolute; bottom: 20px; left: 20px; 
+            color: rgba(255,255,255,0.7); font-size: 14px; 
+            background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px;
+            pointer-events: none;
+        }
+        button {
+            background: #4facfe; color: white; border: none; padding: 12px 24px;
+            font-size: 18px; border-radius: 6px; cursor: pointer; margin-top: 20px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #00f2fe; }
+        button:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
@@ -34,22 +50,26 @@
     <div class="stat">💰 Bütçe: <span id="budget">5000</span> ₺</div>
     <div class="stat">😊 Memnuniyet: <span id="happiness">%70</span></div>
     <div class="stat">👥 Nüfus: <span id="population">1200</span></div>
-    <div class="controls">
-        Hareket: W, A, S, D<br>
-        Etkileşim: E<br>
-        Mini Oyun: SPACE (Zamanında Bas)
-    </div>
+</div>
+
+<div class="controls">
+    <strong>Kontroller:</strong><br>
+    🚶 Hareket: W, A, S, D<br>
+    🛠️ Etkileşim: E (Kırmızı Alan)<br>
+    🔨 Mini Oyun: SPACE (Yeşilde Durdur)
 </div>
 
 <div id="message-box">
     <h1 id="msg-title">YOL ONARIMI</h1>
     <p id="msg-text">Bozuk yol tespit edildi! Onarmak ister misiniz?</p>
+    
     <div id="game-area" style="display:none;">
-        <p>Çubuğu YEŞİL alanda durdur!</p>
+        <p style="color:#aaa; font-size:14px;">Çubuğu <strong>YEŞİL</strong> alanda durdur!</p>
         <div id="progress-bar"><div id="filler"></div></div>
-        <p style="font-size:12px; margin-top:5px;">SPACE tuşuna bas!</p>
+        <p style="font-size:12px; margin-top:10px; color:#888;">SPACE tuşuna bas!</p>
     </div>
-    <button id="action-btn" style="margin-top:15px; padding:10px 20px; font-size:16px; cursor:pointer;">Evet (₺500)</button>
+
+    <button id="action-btn">Onar (₺500)</button>
 </div>
 
 <!-- Three.js Kütüphanesi -->
@@ -70,81 +90,120 @@
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB); // Gökyüzü mavisi
 
-    // İzometrik Kamera
+    // İzometrik Kamera Ayarları (Sabit ve Geniş Açılı)
     const aspect = window.innerWidth / window.innerHeight;
-    const d = 20;
+    const d = 35; // Görüş alanı genişliği
     const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
     
-    // İzometrik Açı
-    camera.position.set(20, 20, 20); 
-    camera.lookAt(scene.position);
+    // Kamera Pozisyonu (Sabit İzometrik Açı)
+    camera.position.set(40, 40, 40); 
+    camera.lookAt(0, 0, 0); // Merkeze bakıyor
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
     // Işıklar
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(10, 20, 10);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    dirLight.position.set(50, 80, 30);
     dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.left = -50;
+    dirLight.shadow.camera.right = 50;
+    dirLight.shadow.camera.top = 50;
+    dirLight.shadow.camera.bottom = -50;
     scene.add(dirLight);
 
     // --- OYUN DÜNYASI ---
-    const groundGeo = new THREE.PlaneGeometry(50, 50);
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0x4caf50 }); // Çimen yeşili
+    
+    // Zemin (Çimen)
+    const groundGeo = new THREE.PlaneGeometry(100, 100);
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0x56ab2f }); 
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);
 
+    // Yol Izgarası (Görsel olarak yolu belli etmek için)
+    const gridHelper = new THREE.GridHelper(100, 20, 0x555555, 0x555555);
+    gridHelper.position.y = 0.05;
+    scene.add(gridHelper);
+
     // Rastgele Binalar
-    const buildingGeo = new THREE.BoxGeometry(2, 4, 2);
-    const buildingMat = new THREE.MeshLambertMaterial({ color: 0xaaaaaa });
-    
-    for(let i=0; i<15; i++) {
-        const mesh = new THREE.Mesh(buildingGeo, buildingMat);
-        mesh.position.x = (Math.random() - 0.5) * 40;
-        mesh.position.z = (Math.random() - 0.5) * 40;
-        mesh.position.y = 2;
-        // Belediye binası alanını boş bırak
-        if(Math.abs(mesh.position.x) < 5 && Math.abs(mesh.position.z) < 5) continue;
+    const buildingColors = [0xaaaaaa, 0x8899a6, 0xd4af37, 0xc0c0c0];
+    for(let i=0; i<25; i++) {
+        const h = 4 + Math.random() * 8;
+        const buildingGeo = new THREE.BoxGeometry(4, h, 4);
+        const matColor = buildingColors[Math.floor(Math.random() * buildingColors.length)];
+        const buildingMat = new THREE.MeshLambertMaterial({ color: matColor });
         
+        const mesh = new THREE.Mesh(buildingGeo, buildingMat);
+        
+        // Rastgele konum ama merkez boş olsun
+        let x = (Math.random() - 0.5) * 80;
+        let z = (Math.random() - 0.5) * 80;
+        
+        // Merkezdeki belediye binası ve başlangıç alanını boş bırak
+        if(Math.abs(x) < 10 && Math.abs(z) < 10) continue;
+        // Çok kenarlara yapışmasın
+        if(Math.abs(x) > 45 || Math.abs(z) > 45) continue;
+
+        mesh.position.set(x, h/2, z);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         scene.add(mesh);
     }
 
-    // Belediye Binası
-    const cityHallGeo = new THREE.BoxGeometry(6, 6, 6);
-    const cityHallMat = new THREE.MeshLambertMaterial({ color: 0xffd700 }); // Altın rengi
+    // Belediye Binası (Merkez)
+    const cityHallGeo = new THREE.BoxGeometry(10, 12, 10);
+    const cityHallMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.3, metalness: 0.5 });
     const cityHall = new THREE.Mesh(cityHallGeo, cityHallMat);
-    cityHall.position.y = 3;
+    cityHall.position.y = 6;
     cityHall.castShadow = true;
+    cityHall.receiveShadow = true;
     scene.add(cityHall);
 
     // Oyuncu (Belediye Başkanı)
-    const playerGeo = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
-    const playerMat = new THREE.MeshLambertMaterial({ color: 0x0000ff }); // Mavi takım elbise
-    const player = new THREE.Mesh(playerGeo, playerMat);
-    player.position.y = 1;
-    player.castShadow = true;
-    scene.add(player);
+    const playerGroup = new THREE.Group();
+    
+    // Gövde
+    const bodyGeo = new THREE.CapsuleGeometry(0.8, 1.5, 4, 8);
+    const bodyMat = new THREE.MeshLambertMaterial({ color: 0x0000ff }); // Mavi Takım Elbise
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 1.25;
+    body.castShadow = true;
+    playerGroup.add(body);
 
-    // Sorunlu Yol Noktası
-    const problemGeo = new THREE.CircleGeometry(1.5, 32);
-    const problemMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.7 });
+    // Kafa
+    const headGeo = new THREE.SphereGeometry(0.6, 16, 16);
+    const headMat = new THREE.MeshLambertMaterial({ color: 0xffccaa }); // Ten rengi
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 2.8;
+    head.castShadow = true;
+    playerGroup.add(head);
+
+    scene.add(playerGroup);
+
+    // Sorunlu Yol Noktası (Kırmızı Alan)
+    const problemGeo = new THREE.RingGeometry(1.5, 2, 32);
+    const problemMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
     const problemSpot = new THREE.Mesh(problemGeo, problemMat);
     problemSpot.rotation.x = -Math.PI / 2;
-    problemSpot.position.set(8, 0.05, 8);
+    problemSpot.position.set(15, 0.1, 15); // Başlangıçta biraz uzakta
     scene.add(problemSpot);
+
+    // Animasyon için değişkenler
+    let problemPulse = 0;
 
     // --- KONTROLLER ---
     const keys = { w: false, a: false, s: false, d: false };
-    const speed = 0.2;
+    const speed = 0.4;
 
     document.addEventListener('keydown', (e) => {
         const key = e.key.toLowerCase();
@@ -165,9 +224,12 @@
     });
 
     function checkInteraction() {
-        const dist = player.position.distanceTo(problemSpot.position);
-        if(dist < 2.5) {
+        // Oyuncu merkezi ile sorunlu nokta arasındaki mesafe
+        const dist = playerGroup.position.distanceTo(problemSpot.position);
+        if(dist < 3.5) {
             startMiniGameUI();
+        } else {
+            // Çok uzaksa uyarı ver (isteğe bağlı, şimdilik sessiz)
         }
     }
 
@@ -185,14 +247,14 @@
         gameArea.style.display = 'none';
         actionBtn.style.display = 'inline-block';
         msgTitle.innerText = "BOZUK YOL TESPİT EDİLDİ";
-        msgText.innerText = "Bu yolu onarmak maliyetli ama memnuniyeti artırır.";
+        msgText.innerText = "Bu yolu onarmak bütçeden düşer ama halkın memnuniyetini artırır.";
         actionBtn.innerText = "Onar (₺500)";
         actionBtn.onclick = startMiniGameLogic;
     }
 
     function startMiniGameLogic() {
         if(budget < 500) {
-            alert("Yetersiz bakiye!");
+            alert("Yetersiz bakiye! Daha fazla para kazanmak için nüfusu artırın.");
             closeUI();
             return;
         }
@@ -200,21 +262,28 @@
         actionBtn.style.display = 'none';
         miniGameRunning = true;
         fillWidth = 0;
-        fillDirection = 1;
+        fillDirection = 1.5; // Hız
         runProgressBar();
     }
 
     function runProgressBar() {
         if(!miniGameRunning) return;
-        fillWidth += 2 * fillDirection;
-        if(fillWidth >= 100 || fillWidth <= 0) fillDirection *= -1;
+        
+        fillWidth += fillDirection;
+        if(fillWidth >= 100) {
+            fillWidth = 100;
+            fillDirection = -1.5;
+        } else if (fillWidth <= 0) {
+            fillWidth = 0;
+            fillDirection = 1.5;
+        }
         
         filler.style.width = fillWidth + '%';
         
-        // Renk değişimi (Kırmızı -> Sarı -> Yeşil)
-        if(fillWidth < 33) filler.style.background = '#ff4b4b';
-        else if(fillWidth < 66) filler.style.background = '#ffff4b';
-        else filler.style.background = '#4bff4b';
+        // Renk mantığı
+        if(fillWidth < 40) filler.style.background = '#ff4b4b'; // Kırmızı
+        else if(fillWidth < 75) filler.style.background = '#ffff4b'; // Sarı
+        else filler.style.background = '#4bff4b'; // Yeşil (Başarı)
 
         animationId = requestAnimationFrame(runProgressBar);
     }
@@ -224,27 +293,46 @@
         cancelAnimationFrame(animationId);
         
         let success = false;
-        if(fillWidth > 60 && fillWidth < 90) success = true; // Yeşil/Sarı bölge
+        // Başarı aralığı: Yeşil bölge (75-95 arası ideal)
+        if(fillWidth > 70 && fillWidth < 98) success = true; 
 
         closeUI();
 
         if(success) {
             budget -= 500;
             happiness = Math.min(100, happiness + 15);
-            population += 50;
-            alert("BAŞARILI! Yol onarıldı. (+Memnuniyet)");
-            problemSpot.visible = false; // Sorunu kaldır
-            // Yeni bir sorun yarat (rastgele)
-            setTimeout(() => {
-                problemSpot.position.set((Math.random()-0.5)*30, 0.05, (Math.random()-0.5)*30);
-                problemSpot.visible = true;
-            }, 3000);
+            population += 100;
+            
+            // Görsel efekt: Sorunu kaldır
+            problemSpot.visible = false;
+            
+            alert("BAŞARILI! Yol onarıldı.\n+Memnuniyet\n+Nüfus");
+            
+            // Yeni bir sorun oluştur
+            setTimeout(spawnNewProblem, 2000);
         } else {
-            budget -= 200;
-            happiness = Math.max(0, happiness - 10);
-            alert("BAŞARISIZ! Malzeme israf oldu. (-Memnuniyet)");
+            budget -= 150; // Ceza daha az
+            happiness = Math.max(0, happiness - 5);
+            alert("BAŞARISIZ!\nZamanlama kötüydü. Malzeme israf oldu.\n-Memnuniyet");
+            // Sorun yerinde kalır, tekrar deneyebilirsin
+            setTimeout(() => {
+                startMiniGameUI(); // Tekrar aç
+            }, 1000);
         }
         updateUI();
+    }
+
+    function spawnNewProblem() {
+        // Rastgele yeni bir konum bul (merkeze çok yakın olmasın)
+        let newX, newZ;
+        do {
+            newX = (Math.random() - 0.5) * 60;
+            newZ = (Math.random() - 0.5) * 60;
+        } while (Math.abs(newX) < 10 && Math.abs(newZ) < 10);
+
+        problemSpot.position.set(newX, 0.1, newZ);
+        problemSpot.visible = true;
+        console.log("Yeni sorun:", newX, newZ);
     }
 
     function closeUI() {
@@ -253,9 +341,9 @@
     }
 
     function updateUI() {
-        document.getElementById('budget').innerText = budget;
-        document.getElementById('happiness').innerText = '%' + happiness;
-        document.getElementById('population').innerText = population;
+        document.getElementById('budget').innerText = Math.floor(budget);
+        document.getElementById('happiness').innerText = '%' + Math.floor(happiness);
+        document.getElementById('population').innerText = Math.floor(population);
     }
 
     // --- OYUN DÖNGÜSÜ ---
@@ -263,16 +351,25 @@
         requestAnimationFrame(animate);
 
         if(!isMiniGameActive) {
-            // Hareket
-            if(keys.w) player.position.z -= speed;
-            if(keys.s) player.position.z += speed;
-            if(keys.a) player.position.x -= speed;
-            if(keys.d) player.position.x += speed;
+            // Hareket Mantığı
+            let moved = false;
+            if(keys.w) { playerGroup.position.z -= speed; playerGroup.rotation.y = Math.PI; moved = true; }
+            if(keys.s) { playerGroup.position.z += speed; playerGroup.rotation.y = 0; moved = true; }
+            if(keys.a) { playerGroup.position.x -= speed; playerGroup.rotation.y = -Math.PI/2; moved = true; }
+            if(keys.d) { playerGroup.position.x += speed; playerGroup.rotation.y = Math.PI/2; moved = true; }
+            
+            // Çapraz giderken yüzü düzeltmek için basit mantık (isteğe bağlı)
+            if((keys.w || keys.s) && (keys.a || keys.d)) {
+                 // Köşegen hareketlerde yüzü son basılan tuşa göre ayarla (basitleştirildi)
+            }
 
-            // Kamera takibi
-            camera.position.x = player.position.x + 20;
-            camera.position.z = player.position.z + 20;
-            camera.lookAt(player.position);
+            // Sınırları kontrol et (Harita dışına çıkmasın)
+            playerGroup.position.x = Math.max(-45, Math.min(45, playerGroup.position.x));
+            playerGroup.position.z = Math.max(-45, Math.min(45, playerGroup.position.z));
+
+            // Sorunlu alan animasyonu (Nabız gibi atması)
+            problemPulse += 0.05;
+            problemSpot.scale.setScalar(1 + Math.sin(problemPulse) * 0.1);
         }
 
         renderer.render(scene, camera);
